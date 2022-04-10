@@ -4,6 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useState, useEffect } from 'react';
 import { UploadFile } from './Core/fileUpload';
 import { LogBox } from 'react-native';
+import SuccessScreen from './src/components/successScreen';
 
 
 LogBox.ignoreLogs(['Setting a timer']);
@@ -15,11 +16,12 @@ export default function App() {
   const [fileName, setFileName] = useState('No Files')
   const [isChoosed, setIsChoosed] = useState(false)
   const [uploadCompleted, isUploadCompleted] = useState(false)
+  const [uploadStart, setUploadStart] = useState(false);
+
 
   //HOOKS
   useEffect(() => {
     if (uploadCompleted) {
-      console.log('Uploaded')
       showToastWithGravityAndOffset('Document Saved SuccessFully')
       clearFiles();
     }
@@ -28,10 +30,10 @@ export default function App() {
 
   const pickDocument = async () => {
     let result = await DocumentPicker.getDocumentAsync({})
-    console.log('Result', typeof(result))
+   
     if (result != null) {
       const r = await fetch(result.uri);
-      console.log('r', typeof(r))
+     
       const b = await r.blob();
       setFileName(result.name)
       setBlobFile(b)
@@ -44,19 +46,20 @@ export default function App() {
     setFileName('No Files')
     setBlobFile(null)
     setIsChoosed(false)
-    
+
   }
 
   const uploadFile = () => {
     if (blobFile) {
       showToastWithGravityAndOffset('Uploading File....')
+      setUploadStart(true)
       UploadFile(blobFile, fileName, isUploadCompleted)
       clearFiles()
 
     }
   }
 
-  const showToastWithGravityAndOffset = (msg='') => {
+  const showToastWithGravityAndOffset = (msg = '') => {
     ToastAndroid.showWithGravityAndOffset(
       msg,
       ToastAndroid.LONG,
@@ -69,26 +72,33 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.textStyle} >{fileName}</Text>
-      <View style={styles.btnContainer}>
+      {uploadStart ?
+        <SuccessScreen uploaded={uploadCompleted} />
+        :
+        <>
+          <Text style={styles.textStyle} >{fileName}</Text>
+          <View style={styles.btnContainer}>
 
-        {isChoosed ?
-          <TouchableOpacity
-            style={styles.btnStyle}
-            onPress={() => uploadFile()}>
-            <Text style={styles.btnTextStyle}>Upload</Text>
-          </TouchableOpacity>
+            {isChoosed ?
+              <TouchableOpacity
+                style={styles.btnStyle}
+                onPress={() => uploadFile()}>
+                <Text style={styles.btnTextStyle}>Upload</Text>
+              </TouchableOpacity>
 
-          :
-          <Text style={styles.textStyle}>Choose a File -- </Text>
-        }
+              :
+              <Text style={styles.textStyle}>Choose a File -- </Text>
+            }
 
-        <TouchableOpacity
-          onPress={() => pickDocument()}>
-          <FontAwesome5 name="file-upload" size={60} color="black" />
-        </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => pickDocument()}>
+              <FontAwesome5 name="file-upload" size={60} color="black" />
+            </TouchableOpacity>
 
-      </View>
+          </View>
+        </>}
+
+
     </View>
   );
 }
